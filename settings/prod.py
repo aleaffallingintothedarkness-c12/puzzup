@@ -3,7 +3,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 from settings.base import *  # pylint: disable=unused-wildcard-import,wildcard-import
 
-DEBUG = True
+DEBUG = False
 SECURE_SSL_REDIRECT = True
 
 # FIXME: Where are you hosting PuzzUp?
