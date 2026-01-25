@@ -21,7 +21,7 @@ if not SITE_PASSWORD:
 INSTALLED_APPS.append("debug_toolbar")
 MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
-ALLOWED_HOSTS = ["localhost"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1:8000"]
 
 # Allow for local (per-user) override
 try:
