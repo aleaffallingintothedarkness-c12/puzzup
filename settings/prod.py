@@ -7,7 +7,7 @@ DEBUG = False
 SECURE_SSL_REDIRECT = True
 
 # FIXME: Where are you hosting PuzzUp?
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["puzzup-vbvn.onrender.com"]
 
 sentry_sdk.init(
     dsn="",
