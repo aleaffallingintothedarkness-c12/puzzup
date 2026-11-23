@@ -1111,20 +1111,39 @@ class TestsolveSession(models.Model):
 
 
 def create_testsolve_thread(instance: TestsolveSession):
-    if discord.enabled():
+    """Create the Google Sheet and Discord thread for a new testsolve session.
+
+    The two are independent: if Discord isn't set up (or fails), the session
+    still gets its sheet, and vice versa.
+    """
+    puzzle = instance.puzzle
+    sheet_id = ""
+    if google.enabled():
         try:
-            puzzle = instance.puzzle
+            sheet_id = google.GoogleManager.instance().create_testsolving_sheet(instance)
+        except Exception:
+            logger.exception("Failed to create Google Sheet for testsolve session")
+
+    thread_id = ""
+    channel_id = settings.DISCORD_TESTSOLVE_CHANNEL_ID
+    if discord.enabled() and not channel_id:
+        logger.warning(
+            "DISCORD_TESTSOLVE_CHANNEL_ID is not set; skipping testsolve Discord thread"
+        )
+    elif discord.enabled():
+        try:
             c = discord.get_client()
 
             # Create a temporary message, start the thread from that message, and then delete the message.
             # This creates a pseudo-private thread.
             message = c.post_message(
-                settings.DISCORD_TESTSOLVE_CHANNEL_ID,
+                channel_id,
                 f"Temp message for testsolve session {instance.id}.",
             )
             thread = discord.build_testsolve_thread(instance, c.guild_id)
             thread = c.save_thread(thread, message["id"])
-            c.delete_message(settings.DISCORD_TESTSOLVE_CHANNEL_ID, message["id"])
+            c.delete_message(channel_id, message["id"])
+            thread_id = thread.id
 
             author_tags = discord.get_tags(puzzle.authors.all(), False)
             editor_tags = discord.get_tags(puzzle.editors.all(), False)
@@ -1137,23 +1156,19 @@ def create_testsolve_thread(instance: TestsolveSession):
                 f"Editor(s): {', '.join(editor_tags)}",
             )
 
-            sheet_id = google.GoogleManager.instance().create_testsolving_sheet(
-                instance
-            )
-            message = c.post_message(
-                thread.id,
-                f"Google Sheets link: https://docs.google.com/spreadsheets/d/{sheet_id}",
-            )
-            c.pin_message(thread.id, message["id"])
-
-            TestsolveSession.objects.filter(id=instance.id).update(
-                discord_thread_id=thread.id, google_sheets_id=sheet_id
-            )
-
-            return (thread.id, sheet_id)
+            if sheet_id:
+                message = c.post_message(
+                    thread.id,
+                    f"Google Sheets link: https://docs.google.com/spreadsheets/d/{sheet_id}",
+                )
+                c.pin_message(thread.id, message["id"])
         except Exception:
-            logger.exception("Failed to create Discord thread or Google sheets.")
-    return ("", "")
+            logger.exception("Failed to create Discord thread for testsolve session")
+
+    TestsolveSession.objects.filter(id=instance.id).update(
+        discord_thread_id=thread_id, google_sheets_id=sheet_id
+    )
+    return (thread_id, sheet_id)
 
 
 class PuzzleComment(models.Model):

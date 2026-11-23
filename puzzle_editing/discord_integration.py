@@ -23,9 +23,8 @@ _global_thread_cache: TimedCache[str, Thread] = TimedCache(timeout=600)
 
 def enabled():
     """Returns true if the django settings enable discord."""
-    return (
-        settings.DISCORD_BOT_TOKEN is not None and settings.DISCORD_GUILD_ID is not None
-    )
+    # Blank values (e.g. DISCORD_BOT_TOKEN="") mean "off", not "on with an empty token".
+    return bool(settings.DISCORD_BOT_TOKEN) and bool(settings.DISCORD_GUILD_ID)
 
 
 def get_client() -> Client:
