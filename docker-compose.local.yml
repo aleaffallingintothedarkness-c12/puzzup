@@ -1,0 +1,32 @@
+# Run PuzzUp locally:  docker compose -f docker-compose.local.yml up --build
+# Then open http://localhost:8000
+#
+# Uses DATABASE_URL and Drive folder IDs from .env (your real Supabase DB).
+# Runs in DEBUG mode, so autopostprod commits into ../puzzup-hunt but does NOT push.
+services:
+  web:
+    build:
+      context: .
+      dockerfile: local/Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ../puzzup-hunt:/hunt
+      - ~/.ssh/puzzup_deploy:/home/app/.ssh/puzzup_deploy:ro
+    environment:
+      # Set here so they win over the values in .env (load_dotenv never overrides).
+      DJANGO_SETTINGS_MODULE: settings.dev
+      HUNT_REPO: /hunt
+      HUNT_REPO_URL: git@github.com:aleaffallingintothedarkness-c12/magic-hunt-2.git
+      GIT_SSH_COMMAND: ssh -i /home/app/.ssh/puzzup_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/tmp/known_hosts
+      GIT_AUTHOR_NAME: Puzzup (local)
+      GIT_AUTHOR_EMAIL: puzzup@mypuzzlehunt.com
+      GIT_COMMITTER_NAME: Puzzup (local)
+      GIT_COMMITTER_EMAIL: puzzup@mypuzzlehunt.com
+      # Keep local testing from posting to the team's Discord.
+      DISCORD_BOT_TOKEN: ""
+      DISCORD_GUILD_ID: ""
+      DISCORD_TESTSOLVE_CHANNEL_ID: ""
+      PYTHONUNBUFFERED: "1"
