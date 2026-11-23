@@ -244,6 +244,14 @@ credentials_file = next(
     ),
     BASE_DIR / "credentials/drive-credentials.json",
 )
+# Preferred: act as a real Google account (see scripts/google_oauth_login.py).
+_oauth = {
+    "client_id": os.environ.get("GOOGLE_OAUTH_CLIENT_ID", ""),
+    "client_secret": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", ""),
+    "refresh_token": os.environ.get("GOOGLE_OAUTH_REFRESH_TOKEN", ""),
+}
+if all(_oauth.values()):
+    DRIVE_SETTINGS["oauth"] = _oauth
 if credentials_file.is_file():
     with open(credentials_file, "rt") as f:
         DRIVE_SETTINGS["credentials"] = json.load(f)

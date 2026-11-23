@@ -4,6 +4,7 @@ import urllib.parse
 from asgiref.sync import async_to_sync
 from bs4 import BeautifulSoup
 from django.conf import settings
+from google.oauth2 import credentials as user_credentials
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -14,8 +15,8 @@ SCOPES = [
 
 
 def enabled():
-    """Returns true if the django settings enable discord."""
-    return "credentials" in settings.DRIVE_SETTINGS
+    """Returns true if the django settings enable Google Drive."""
+    return "oauth" in settings.DRIVE_SETTINGS or "credentials" in settings.DRIVE_SETTINGS
 
 
 class GoogleManager:
@@ -31,10 +32,23 @@ class GoogleManager:
         return cls.__instance
 
     def __init__(self):
-        self.creds = service_account.Credentials.from_service_account_info(
-            settings.DRIVE_SETTINGS["credentials"],
-            scopes=SCOPES,
-        )
+        oauth = settings.DRIVE_SETTINGS.get("oauth")
+        if oauth:
+            # Act as a real Google account. Service accounts have no Drive
+            # storage quota, so they can read files but cannot create any.
+            self.creds = user_credentials.Credentials(
+                token=None,
+                refresh_token=oauth["refresh_token"],
+                client_id=oauth["client_id"],
+                client_secret=oauth["client_secret"],
+                token_uri="https://oauth2.googleapis.com/token",
+                scopes=SCOPES,
+            )
+        else:
+            self.creds = service_account.Credentials.from_service_account_info(
+                settings.DRIVE_SETTINGS["credentials"],
+                scopes=SCOPES,
+            )
         self.files = build("drive", "v3", credentials=self.creds).files()
         self.spreadsheets = build("sheets", "v4", credentials=self.creds).spreadsheets()
 
