@@ -38,14 +38,78 @@ def set_env_values(env_path: Path, values: dict) -> None:
     env_path.chmod(0o600)
 
 
+PENDING = Path(__file__).resolve().parent.parent / "credentials" / ".oauth_pending.json"
+
+
+def paste_mode(client_file: Path, client_info: dict, pasted_url) -> None:
+    """Two-step sign-in for when the browser can't reach this machine's localhost.
+
+    Step 1 (no pasted_url): print a link, remember the PKCE verifier.
+    Step 2 (pasted_url): exchange the localhost URL the browser ended up on.
+    """
+    import os
+
+    from google_auth_oauthlib.flow import Flow
+
+    redirect = f"http://localhost:{PORT}/"
+    if pasted_url is None:
+        flow = Flow.from_client_secrets_file(
+            str(client_file), SCOPES, redirect_uri=redirect
+        )
+        url, state = flow.authorization_url(access_type="offline", prompt="consent")
+        PENDING.write_text(json.dumps({"state": state, "verifier": flow.code_verifier}))
+        PENDING.chmod(0o600)
+        print("Open this link, sign in, then copy the localhost address you land on:\n")
+        print(url)
+        return
+
+    pending = json.loads(PENDING.read_text())
+    flow = Flow.from_client_secrets_file(
+        str(client_file), SCOPES, redirect_uri=redirect, state=pending["state"]
+    )
+    flow.code_verifier = pending["verifier"]
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # redirect is plain http://localhost
+    flow.fetch_token(authorization_response=pasted_url)
+    PENDING.unlink()
+    finish(flow.credentials, client_info)
+
+
+def finish(creds, client_info: dict) -> None:
+    if not creds.refresh_token:
+        sys.exit("Google did not return a refresh token. Run the script again.")
+    email = (
+        build("drive", "v3", credentials=creds)
+        .about()
+        .get(fields="user(emailAddress)")
+        .execute()["user"]["emailAddress"]
+    )
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    set_env_values(
+        env_path,
+        {
+            "GOOGLE_OAUTH_CLIENT_ID": client_info["client_id"],
+            "GOOGLE_OAUTH_CLIENT_SECRET": client_info["client_secret"],
+            "GOOGLE_OAUTH_REFRESH_TOKEN": creds.refresh_token,
+        },
+    )
+    print(f"\nSigned in as {email}. Saved the token to {env_path} (not printed).")
+
+
 def main() -> None:
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    paste = "--paste" in args
+    args = [a for a in args if a != "--paste"]
+    if not args:
         sys.exit(__doc__)
-    client_file = Path(sys.argv[1])
+    client_file = Path(args[0])
     client = json.loads(client_file.read_text())
     client_info = client.get("installed") or client.get("web")
     if not client_info:
         sys.exit("That file is not an OAuth client JSON (expected an 'installed' key).")
+
+    if paste:
+        paste_mode(client_file, client_info, args[1] if len(args) > 1 else None)
+        return
 
     flow = InstalledAppFlow.from_client_secrets_file(str(client_file), SCOPES)
     creds = flow.run_local_server(
@@ -59,26 +123,7 @@ def main() -> None:
         ),
         success_message="Signed in. You can close this tab and go back to the terminal.",
     )
-    if not creds.refresh_token:
-        sys.exit("Google did not return a refresh token. Run the script again.")
-
-    email = (
-        build("drive", "v3", credentials=creds)
-        .about()
-        .get(fields="user(emailAddress)")
-        .execute()["user"]["emailAddress"]
-    )
-
-    env_path = Path(__file__).resolve().parent.parent / ".env"
-    set_env_values(
-        env_path,
-        {
-            "GOOGLE_OAUTH_CLIENT_ID": client_info["client_id"],
-            "GOOGLE_OAUTH_CLIENT_SECRET": client_info["client_secret"],
-            "GOOGLE_OAUTH_REFRESH_TOKEN": creds.refresh_token,
-        },
-    )
-    print(f"\nSigned in as {email}. Saved the token to {env_path} (not printed).")
+    finish(creds, client_info)
 
 
 if __name__ == "__main__":
