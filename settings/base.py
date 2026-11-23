@@ -134,17 +134,22 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
 
-# FIXME: Update email settings
-EMAIL_USE_TLS = True
-EMAIL_HOST = "mail.mypuzzlehunt.com"
-EMAIL_HOST_USER = "noreply@puzzup.mypuzzlehunt.com"
-EMAIL_HOST_PASSWORD = "fixme"
-EMAIL_PORT = 587
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# Email is sent through the Gmail API as the Google account in GOOGLE_OAUTH_*
+# (Render's free plan blocks SMTP ports). Gmail always sends from that
+# account's own address, so PUZZUP_FROM_EMAIL should be that address.
+# Without the Google settings, emails are only logged to the console.
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "puzzle_editing.gmail_backend.EmailBackend"
+    if os.environ.get("GOOGLE_OAUTH_REFRESH_TOKEN")
+    else "django.core.mail.backends.console.EmailBackend",
+)
 EMAIL_SUBJECT_PREFIX = "[Puzzup] "
 
-DEFAULT_FROM_EMAIL = "noreply@puzzup.mypuzzlehunt.com"
-AUTOPOSTPROD_EMAIL = "puzzup@mypuzzlehunt.com"
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "PUZZUP_FROM_EMAIL", "aleaffallingintothedarkness@gmail.com"
+)
+AUTOPOSTPROD_EMAIL = DEFAULT_FROM_EMAIL
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # 1 year, in seconds

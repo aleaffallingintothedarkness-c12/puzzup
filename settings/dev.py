@@ -9,7 +9,9 @@ DEBUG = True
 
 EMAIL_SUBJECT_PREFIX = "[DEVELOPMENT] "
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
 
 INTERNAL_IPS = [
     "localhost",
