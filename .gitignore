@@ -42,3 +42,5 @@ puzzle_postprods/
 
 *.codekit3
 settings_local.py
+# Service account keys
+credentials/

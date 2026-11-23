@@ -231,7 +231,19 @@ REST_FRAMEWORK = {
 }
 
 DRIVE_SETTINGS = {}
-credentials_file = BASE_DIR / "credentials/drive-credentials.json"
+# Render mounts Secret Files at /etc/secrets/<name>.
+credentials_file = next(
+    (
+        path
+        for path in (
+            Path(os.environ.get("DRIVE_CREDENTIALS_FILE", "")),
+            BASE_DIR / "credentials/drive-credentials.json",
+            Path("/etc/secrets/drive-credentials.json"),
+        )
+        if str(path) not in ("", ".") and path.is_file()
+    ),
+    BASE_DIR / "credentials/drive-credentials.json",
+)
 if credentials_file.is_file():
     with open(credentials_file, "rt") as f:
         DRIVE_SETTINGS["credentials"] = json.load(f)
