@@ -1,56 +1,53 @@
 {% extends "base.html" %}
+{% block title %}Check metadata{% endblock %}
 
 {% block main %}
+<h1>Check metadata</h1>
+<p>Compares each puzzle's details in PuzzUp with its fixture file in the hunt site repo
+(<code>server/tph/fixtures/puzzles/</code> on the <code>{{ branch }}</code> branch).
+If something differs, run postprod again for that puzzle, or fix the file in the repo.</p>
+
+{% if error %}
+<div class="notification is-warning">{{ error }}</div>
+{% else %}
+<p>Checked <b>{{ checked }}</b> fixture{{ checked|pluralize }}.</p>
+{% endif %}
 
 <div class="box">
-<h2>Mismatched slug</h2>
-<table>
-<tr>
-	<th>Link to postprod page</th>
-	<th>Current slug</th>
-	<th>Slug in file</th>
-</tr>
-{% for puzzle in mismatches %}
+<h2>Differences</h2>
+{% if differences %}
+<table class="table is-narrow">
+<tr><th>Puzzle</th><th>Field</th><th>In PuzzUp</th><th>In the repo</th></tr>
+{% for puzzle, field, ours, theirs in differences %}
 <tr>
 <td><a href="{% url 'puzzle_postprod' puzzle.id %}">{{ puzzle }}</a></td>
-<td>{{ puzzle.postprod.slug }}</td>
-<td>{{ puzzle.slug_in_file }}</td>
-{% endfor %}
+<td>{{ field }}</td>
+<td>{{ ours }}</td>
+<td>{{ theirs|default:"(missing)" }}</td>
 </tr>
+{% endfor %}
 </table>
+{% else %}
+<p class="empty">None 🎉</p>
+{% endif %}
 </div>
 
 <div class="box">
-<h2>Credits diff</h2>
-<table>
-<tr>
-	<th>Link</th>
-	<th>New credits</th>
-	<th>Credits in file</th>
-</tr>
-{% for puzzle in credits_mismatches %}
-<tr>
-<td><a href="{% url 'puzzle_edit' puzzle.id %}">{{ puzzle }}</a></td>
-<td>{{ puzzle.metadata_credits }}</td>
-<td>{{ puzzle.credits_in_file }}</td>
-{% endfor %}
-</tr>
-</table>
-</div>
-
-
-<div class="box">
-<h2>Metadata file is missing</h2>
-{% for puzzle in notfound %}
-{{ puzzle }}<br>
+<h2>Postprodded but not on {{ branch }} yet</h2>
+<p>These puzzles have been postprodded, but their branch hasn't been merged into {{ branch }}.</p>
+{% for puzzle in not_merged %}
+<a href="{% url 'puzzle_postprod' puzzle.id %}">{{ puzzle }}</a>{% if puzzle.postprod.slug %} (branch <code>{{ puzzle.postprod.slug }}</code>){% endif %}<br>
+{% empty %}
+<p class="empty">None</p>
 {% endfor %}
 </div>
 
 <div class="box">
-<h2>Something else happened</h2>
-{% for puzzle in exceptions %}
-{{ puzzle }}<br>
+<h2>Fixture files PuzzUp couldn't match</h2>
+{% for filename, reason in unknown_files %}
+<code>{{ filename }}</code>: {{ reason }}<br>
+{% empty %}
+<p class="empty">None</p>
 {% endfor %}
 </div>
-
 {% endblock %}

@@ -1,6 +1,7 @@
 import csv
 import datetime
 import json
+import logging
 import operator
 import os
 import random
@@ -14,6 +15,7 @@ import django.forms as forms
 import django.urls as urls
 import pydantic
 import requests
+import yaml
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -94,6 +96,8 @@ from puzzle_editing.models import User
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=redefined-builtin
+
+logger = logging.getLogger(__name__)
 
 
 def get_sessions_with_joined_and_current(user):
@@ -2019,46 +2023,74 @@ def export(request):
 
 @login_required
 def check_metadata(request):
-    puzzleFolder = os.path.join(settings.HUNT_REPO, "hunt/data/puzzle")
-    mismatches = []
-    credits_mismatches = []
-    notfound = []
-    notfound = []
-    exceptions = []
-    for puzzledir in os.listdir(puzzleFolder):
-        datafile = os.path.join(puzzleFolder, puzzledir, "metadata.json")
-        try:
-            with open(datafile) as data:
-                metadata = json.load(data)
-                pu_id = metadata["puzzle_idea_id"]
-                slug_in_file = metadata["puzzle_slug"]
-                credits_in_file = metadata["credits"]
-                puzzle = Puzzle.objects.get(id=pu_id)
-                metadata_credits = puzzle.metadata["credits"]
+    """Compare PuzzUp's puzzle metadata with the tph fixtures on the hunt repo's main branch."""
+    from puzzle_editing.git import FIXTURE_DIR
+    from puzzle_editing.git import GitRepo
 
-                if puzzle.postprod.slug != slug_in_file:
-                    puzzle.slug_in_file = slug_in_file
-                    mismatches.append(puzzle)
-                if metadata_credits != credits_in_file:
-                    puzzle.metadata_credits = metadata_credits
-                    puzzle.credits_in_file = credits_in_file
-                    credits_mismatches.append(puzzle)
-        except FileNotFoundError:
-            notfound.append(puzzledir)
-            pass
-        except Exception as e:
-            exceptions.append("{} - {}".format(puzzledir, e))
-            print(datafile, e)
-            # sys.exit(1)
+    error = None
+    if not settings.HUNT_REPO:
+        error = "HUNT_REPO is not set, so PuzzUp has no copy of the hunt repo to check."
+    elif not settings.DEBUG or not os.path.isdir(settings.HUNT_REPO):
+        try:
+            GitRepo()  # clones if needed, then checks out and pulls the main branch
+        except Exception as e:  # noqa: BLE001
+            logger.exception("check_metadata: could not update hunt repo")
+            error = f"Could not fetch the hunt repo: {e}"
+
+    differences = []  # (puzzle, field, value in PuzzUp, value in file)
+    unknown_files = []  # (filename, reason)
+    found_ids = set()
+    fixture_dir = os.path.join(settings.HUNT_REPO, FIXTURE_DIR)
+    if not error and os.path.isdir(fixture_dir):
+        for filename in sorted(os.listdir(fixture_dir)):
+            if not filename.endswith((".yaml", ".yml")):
+                continue
+            try:
+                with open(os.path.join(fixture_dir, filename)) as f:
+                    entries = yaml.safe_load(f) or []
+                fields = next(
+                    e["fields"] for e in entries if e.get("model") == "spoilr_core.puzzle"
+                )
+                puzzle = Puzzle.objects.get(id=fields["external_id"])
+            except StopIteration:
+                unknown_files.append((filename, "no spoilr_core.puzzle entry"))
+                continue
+            except Puzzle.DoesNotExist:
+                unknown_files.append((filename, "puzzle id {} is not in PuzzUp".format(fields.get("external_id"))))
+                continue
+            except Exception as e:  # noqa: BLE001
+                unknown_files.append((filename, str(e)))
+                continue
+            found_ids.add(puzzle.id)
+            metadata = puzzle.metadata
+            expected = {
+                "slug": puzzle.postprod.slug if puzzle.has_postprod() else None,
+                "name": puzzle.name,
+                "answer": metadata["answer"],
+                "credits": metadata["credits"],
+            }
+            for field, value in expected.items():
+                if value is not None and str(fields.get(field)) != str(value):
+                    differences.append((puzzle, field, value, fields.get(field)))
+    elif not error:
+        error = f"The hunt repo has no {FIXTURE_DIR} folder on its main branch yet."
+
+    not_merged = [
+        p
+        for p in Puzzle.objects.filter(postprod__isnull=False).order_by("name")
+        if p.id not in found_ids
+    ]
 
     return render(
         request,
         "check_metadata.html",
         {
-            "mismatches": mismatches,
-            "credits_mismatches": credits_mismatches,
-            "notfound": notfound,
-            "exceptions": exceptions,
+            "error": error,
+            "branch": settings.HUNT_REPO_BRANCH,
+            "differences": differences,
+            "unknown_files": unknown_files,
+            "not_merged": not_merged,
+            "checked": len(found_ids),
         },
     )
 
