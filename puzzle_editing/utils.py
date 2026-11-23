@@ -83,7 +83,8 @@ def export_puzzle(
         with open(puzzle_path, "w") as f:
             f.write(
                 get_puzzle_html(
-                    pp.puzzle.round.puzzle_template or DEFAULT_PUZZLE_TEMPLATE,
+                    (pp.puzzle.round and pp.puzzle.round.puzzle_template)
+                    or DEFAULT_PUZZLE_TEMPLATE,
                     puzzle_html,
                     pp.slug,
                     images=images,
@@ -99,7 +100,8 @@ def export_puzzle(
         with open(solution_path, "w") as f:
             f.write(
                 get_puzzle_html(
-                    pp.puzzle.round.solution_template or DEFAULT_SOLUTION_TEMPLATE,
+                    (pp.puzzle.round and pp.puzzle.round.solution_template)
+                    or DEFAULT_SOLUTION_TEMPLATE,
                     solution_html,
                     pp.slug,
                     images=images,

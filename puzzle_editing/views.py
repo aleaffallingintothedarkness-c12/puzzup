@@ -991,7 +991,7 @@ class PuzzlePostprodForm(forms.ModelForm):
                 ].help_text = f"(Automatically extracted from https://docs.google.com/document/d/{doc_id}/)"
 
         # NB: MH-2023 specific logic.
-        if puzzle.round.act and puzzle.round.act.name == "Act 2":
+        if puzzle.round and puzzle.round.act and puzzle.round.act.name == "Act 2":
             self.fields[
                 "puzzle_directory"
             ].initial = "client/encrypted/factory/puzzles/"
