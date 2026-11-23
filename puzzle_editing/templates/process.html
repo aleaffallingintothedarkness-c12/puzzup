@@ -3,16 +3,26 @@
 {% block title %}How To's{% endblock %}
 
 {% block main %}
+<style>
+  /* Team-specific details still to fill in (search the templates for "fillme"). */
+  .fillme { background: #fff3b0; color: #5c4a00; border-radius: 4px; padding: 0 .35em; font-size: .9em; }
+</style>
 <h1>How To's</h1>
 <div class="columns">
 	<div class="column is-one-fifth">
-		<a href="/process/getting-started">Getting Started</a><br>
+		<a href="/process/start-here"><b>⭐ Start here</b></a><br>
+<a href="/process/getting-started">Getting Started</a><br>
 		<a href="/process/writing">Writing</a><br>
 		<a href="/process/testsolving">Testsolving</a><br>
 		<a href="/process/solution">Solution and Hints</a><br>
 	</div>
 	<div class="column">
-    {% if doc == "getting-started" %}
+    {% if doc == "start-here" %}
+<div id="start-here" class="box">
+{% include "process/start-here.html" %}
+</div>
+{% endif %}
+{% if doc == "getting-started" %}
 		<div id="getting-started" class="box">
 			{% include "process/getting-started.html" %}
 		</div>

@@ -1,0 +1,116 @@
+{% comment %}
+  Team guide. Yellow "TEAM:" tags mark details only the team can fill in;
+  search this file for "fillme" to find them all.
+{% endcomment %}
+<style>
+  .start-here h2 { margin-top: 1.6em; }
+  .start-here h2:first-of-type { margin-top: .2em; }
+  .start-here .pipeline { display: flex; flex-wrap: wrap; gap: .35em; align-items: center; margin: .6em 0 1em; }
+  .start-here .pipeline span.step { background: #eef2ff; border-radius: 999px; padding: .15em .7em; font-size: .92em; }
+</style>
+
+<div class="content start-here">
+<h1 id="start-here">Start here</h1>
+<p>PuzzUp is where our team tracks every puzzle from first idea to the finished page on the hunt website. This page covers everything you need for day-to-day use. For the full reference, see <a href="/docs">How to use PuzzUp</a>.</p>
+<p><b>The site can take up to a minute to load</b> if nobody has used it for a while. It runs on free hosting that goes to sleep. After the first page, it's quick.</p>
+
+<h2 id="where-things-live">Where things live</h2>
+<table class="table is-narrow">
+  <tbody>
+    <tr><th>PuzzUp</th><td>Puzzle status, answers, comments, testsolve sessions, feedback.</td></tr>
+    <tr><th>Google Drive</th><td>Puzzle drafts, brainstorm sheets, testsolve sheets and factcheck sheets. PuzzUp creates the sheets for you in our team folders: <i>Puzzle Drafts</i>, <i>Testsolving</i> and <i>Factchecking</i>.</td></tr>
+    <tr><th>Discord</th><td>Discussion. Each puzzle gets its own private channel for its authors and editors. <span class="fillme">TEAM: server name / invite link</span></td></tr>
+    <tr><th>Hunt website</th><td>The code for the hunt site lives in a private GitHub repo. PuzzUp can turn a finished Google Doc into a page there (see <a href="#postprod">Postprod</a>).</td></tr>
+  </tbody>
+</table>
+
+<h2 id="joining">1. Join</h2>
+<ol>
+  <li><a href="/register">Create an account</a>. You'll need the site password, which you can get from <span class="fillme">TEAM: who to ask</span>.</li>
+  <li>On your <a href="/account">account page</a>, set your display name and time zone, and <b>link your Discord account</b>. PuzzUp only adds you to a puzzle's Discord channel if your accounts are linked.</li>
+  <li>Want to be an editor? Ask <span class="fillme">TEAM: admin name</span>. Editors can create rounds and answers and assign answers to puzzles.</li>
+</ol>
+
+<h2 id="life-of-a-puzzle">2. The life of a puzzle</h2>
+<p>Every puzzle has a <b>status</b>. It tells everyone where the puzzle is and who it's waiting on. A typical puzzle goes:</p>
+<div class="pipeline">
+  <span class="step">🥚 Initial Idea</span> →
+  <span class="step">🎩 Awaiting Approval By EIC</span> →
+  <span class="step">✏️ Writing</span> →
+  <span class="step">💡 Ready to be Testsolved</span> →
+  <span class="step">Revising</span> →
+  <span class="step">Needs Solution</span> →
+  <span class="step">Ready for Postprodding</span> →
+  <span class="step">Needs Factcheck</span> →
+  <span class="step">Needs Copy Edits</span> →
+  <span class="step">Done</span>
+</div>
+<ul>
+  <li><b>Anyone on a puzzle can change its status.</b> PuzzUp suggests the usual next step on the puzzle's page, but nothing is enforced, so change it whenever it reflects reality.</li>
+  <li><b>Each status is "blocked on" someone</b>: the authors, the editors, the testsolve coordinators, and so on. <a href="/authored">✋ My Puzzles</a> shows what's waiting on you.</li>
+  <li><b>Changing the status notifies people.</b> Authors and editors get an email and a message in the puzzle's Discord channel.</li>
+  <li>Puzzles that won't be used go to <b>Deferred</b> (maybe later) or <b>Dead</b> (not happening). They're hidden from most lists.</li>
+</ul>
+
+<h2 id="new-puzzle">3. Submit an idea</h2>
+<ol>
+  <li>Click <a href="/puzzle/new">➕ Add</a>. A rough idea is fine. You can note what kind of answer you'd like (length, theme, letter constraints).</li>
+  <li>PuzzUp creates a <b>brainstorm sheet</b> in the <i>Puzzle Drafts</i> Drive folder and a Discord channel for the puzzle. The sheet's link appears in the puzzle's <b>Solution</b> box. Keep it there when you add the solution doc link later.</li>
+  <li>When you want an editor, set the status to <b>Awaiting Approval By EIC</b>. <span class="fillme">TEAM: who assigns editors</span> will pick one.</li>
+  <li>When the idea is approved, your editor assigns an <b>answer</b> and the status moves to <b>Writing</b>.</li>
+</ol>
+<p><b>Spoilers:</b> opening a puzzle's page marks you as spoiled on it, which means you can't testsolve it. Use the lists to see titles without opening puzzles you might want to testsolve. <a href="/my-spoiled">My spoiled puzzles</a> (under <i>More</i>) shows which ones you've seen.</p>
+
+<h2 id="writing">4. Write it</h2>
+<ul>
+  <li><b>Write the puzzle and its solution in two Google Docs inside the <i>Puzzle Drafts</i> folder.</b> PuzzUp can only read docs in our team folders, or docs shared with <span class="fillme">TEAM: PuzzUp's Google account</span>.</li>
+  <li>Put the links on the puzzle page: the puzzle doc under <b>Puzzle</b>, the solution doc under <b>Solution</b>. Postprod picks them up automatically later.</li>
+  <li>Keep discussion in the puzzle's Discord channel or as comments on the puzzle page. Comments are kept with the puzzle and emailed to its authors and editors.</li>
+</ul>
+
+<h2 id="testsolving">5. Testsolve</h2>
+<p><b>Getting your puzzle testsolved:</b> set its status to <b>Ready to be Testsolved</b>. Then on <a href="/testsolve">✏️ Testsolve</a>, start a session, put the date and time in its notes, and share the link in <span class="fillme">TEAM: testsolving channel</span>. Aim for <span class="fillme">TEAM: e.g. two clean testsolves</span> before moving on.</p>
+<p><b>Testsolving someone else's puzzle:</b></p>
+<ol>
+  <li>On <a href="/testsolve">✏️ Testsolve</a>, start a new session next to a puzzle you can testsolve, or join an open session.</li>
+  <li>PuzzUp creates a testsolve sheet in the <i>Testsolving</i> folder. Solve in it, and use the session page to check answers and leave comments.</li>
+  <li>When you finish (or give up), click <b>Done with the puzzle?</b> and fill in the feedback form: fun, difficulty, time spent, and what worked or didn't. Authors rely on this, so be specific.</li>
+</ol>
+
+<h2 id="postprod">6. Postprod: from Google Doc to hunt website</h2>
+<p>Once the puzzle and solution are final, PuzzUp converts the Google Docs into pages for the hunt website.</p>
+<ol>
+  <li>On the puzzle's page, find the <b>Postprod</b> section and click <b>start one now</b>.</li>
+  <li>The puzzle and solution doc links are usually filled in already. Choose a <b>slug</b>: the puzzle's address on the hunt site. For example, <code>fifty-fifty</code> becomes <code>/puzzles/fifty-fifty</code>. Use lowercase words and dashes, and don't put spoilers in it.</li>
+  <li>Submit. It can take a minute. PuzzUp converts the docs (text, tables and images), then pushes them to a new branch named after the slug in the hunt site's GitHub repo.</li>
+  <li>A <span class="fillme">TEAM: web/tech person</span> reviews that branch, polishes anything interactive or unusual, and merges it.</li>
+</ol>
+<p>You can run postprod again after editing the docs. It updates the same branch.</p>
+<details>
+  <summary><b>For the web team: checking a postprod branch</b></summary>
+  <ol>
+    <li><code>git fetch</code>, then <code>git checkout &lt;slug&gt;</code> in the hunt site repo.</li>
+    <li>Run <code>./scripts/load_fixtures</code> to load the puzzle's metadata.</li>
+    <li>Open the puzzle and solution pages locally and fix anything the conversion missed. Complex formatting, special fonts and interactive parts usually need hand work.</li>
+    <li>Commit and merge into <code>main</code>.</li>
+  </ol>
+</details>
+
+<h2 id="factcheck">7. Factcheck, copy edit, done</h2>
+<ul>
+  <li>Moving a puzzle to <b>Needs Factcheck</b> creates a factcheck sheet from our template in the <i>Factchecking</i> folder. Factcheckers work through it and comment on the puzzle.</li>
+  <li><b>Needs Copy Edits</b> covers wording, spelling and consistency with house style. <span class="fillme">TEAM: style guide link</span></li>
+  <li>When everything is signed off, set the status to <b>Done</b> 🎉.</li>
+</ul>
+
+<h2 id="help">Getting help</h2>
+<table class="table is-narrow">
+  <tbody>
+    <tr><th>PuzzUp or account problems</th><td><span class="fillme">TEAM: name</span></td></tr>
+    <tr><th>Assigning editors and answers</th><td><span class="fillme">TEAM: editors-in-chief</span></td></tr>
+    <tr><th>Testsolving</th><td><span class="fillme">TEAM: testsolve coordinator</span></td></tr>
+    <tr><th>Hunt website / postprod</th><td><span class="fillme">TEAM: web lead</span></td></tr>
+    <tr><th>Art, tech or accessibility help on a puzzle</th><td>Open a support request from the puzzle's page (under <a href="/support/all">More → Support</a>).</td></tr>
+  </tbody>
+</table>
+</div>

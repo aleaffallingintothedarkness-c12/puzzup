@@ -204,7 +204,7 @@ def docs(request):
     return render(request, "docs.html", {})
 
 
-def process(request, doc="writing"):
+def process(request, doc="start-here"):
     if not request.user.is_authenticated:
         return render(request, "process_not_logged_in.html")
     return render(request, "process.html", {"doc": doc})
