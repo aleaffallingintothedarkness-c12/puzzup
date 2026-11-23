@@ -6,16 +6,16 @@
 {{ output }}
 </p>
 {% else %}
-<p>Click this button to export all puzzles in a given act. This will create a new branch in your git repo.</p>
+<p>Export the metadata of every puzzle that has an answer, either for one act or all of them. This creates a new <code>export-…</code> branch in the hunt repo.</p>
 {% endif %}
 <form method="post" action="">
   {% csrf_token %}
   <p>
   <select name="act">
-    <option value="Act 1">Act 1</option>
-    <option value="Act 2">Act 2</option>
-    <option value="Act 3">Act 3</option>
-    <option value="">All</option>
+    <option value="">All acts</option>
+    {% for act in acts %}
+    <option value="{{ act.name }}">{{ act.name }}</option>
+    {% endfor %}
   </select>
   <br/>
   <br/>

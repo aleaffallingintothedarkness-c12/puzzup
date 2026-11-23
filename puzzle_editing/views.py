@@ -64,6 +64,7 @@ from .view_helpers import group_required
 from puzzle_editing import models as m
 from puzzle_editing.google_integration import GoogleManager
 from puzzle_editing.graph import curr_puzzle_graph_b64
+from puzzle_editing.models import Act
 from puzzle_editing.models import CommentReaction
 from puzzle_editing.models import get_user_role
 from puzzle_editing.models import Hint
@@ -994,11 +995,6 @@ class PuzzlePostprodForm(forms.ModelForm):
                     "solution_google_doc_id"
                 ].help_text = f"(Automatically extracted from https://docs.google.com/document/d/{doc_id}/)"
 
-        # NB: MH-2023 specific logic.
-        if puzzle.round and puzzle.round.act and puzzle.round.act.name == "Act 2":
-            self.fields[
-                "puzzle_directory"
-            ].initial = "client/encrypted/factory/puzzles/"
 
     def get_gdoc_html(self, google_doc_id: str) -> str:
         if not google_doc_id:
@@ -2018,7 +2014,8 @@ def export(request):
             else "Failed to export. Please report this issue to tech."
         )
 
-    return render(request, "export.html", {"output": output})
+    acts = Act.objects.filter(rounds__isnull=False).distinct().order_by("name")
+    return render(request, "export.html", {"output": output, "acts": acts})
 
 
 @login_required
