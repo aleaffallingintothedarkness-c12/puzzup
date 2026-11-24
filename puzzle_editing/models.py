@@ -515,6 +515,18 @@ class Puzzle(models.Model):
     content = models.TextField(
         blank=True, help_text="The puzzle itself. An external link is fine."
     )
+    # A complete standalone HTML page (SVG, <style> and <script> allowed). It is
+    # never inserted into PuzzUp's own pages: it is only shown inside an iframe
+    # sandboxed without allow-same-origin, so its scripts run in an opaque origin
+    # and can't reach PuzzUp's cookies, session or DOM.
+    content_html = models.TextField(
+        blank=True,
+        verbose_name="Interactive HTML",
+        help_text=(
+            "Optional. A complete HTML page for puzzles that need SVG, styles or "
+            "scripts. Testsolvers see it in a sandboxed viewer."
+        ),
+    )
     solution = models.TextField(blank=True)
     is_meta = models.BooleanField(
         verbose_name="Is this a meta?", help_text="Check the box if yes.", default=False

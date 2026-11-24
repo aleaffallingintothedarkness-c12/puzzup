@@ -49,6 +49,7 @@ urlpatterns = [
     ),
     path("puzzle/<int:id>/puzzle.yaml", views.puzzle_yaml, name="puzzle_yaml"),
     path("puzzle/<int:id>/escape", views.puzzle_escape, name="puzzle_escape"),
+    path("puzzle/<int:id>/html", views.puzzle_html, name="puzzle_html"),
     re_path(
         r"^puzzle/(?P<id>\d+)/support/(?P<team>ART|ACC|TECH)$",
         views.support_by_puzzle_id,
@@ -78,6 +79,7 @@ urlpatterns = [
         name="testsolve_feedback",
     ),
     path("testsolve/<int:id>/finish", views.testsolve_finish, name="testsolve_finish"),
+    path("testsolve/<int:id>/html", views.testsolve_html, name="testsolve_html"),
     path(
         "testsolve_csv/testsolve_<int:id>.csv",
         views.testsolve_csv,

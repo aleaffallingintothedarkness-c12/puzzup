@@ -267,3 +267,99 @@ class Misc(TestCase):
             403,
             "non-meta-editor shouldn't have access to rounds",
         )
+
+
+@override_settings(DISCORD_BOT_TOKEN=None)
+class InteractivePuzzleHtml(TestCase):
+    HTML = '<!doctype html><svg></svg><script>alert("x")</script><p>A "quoted" & odd</p>'
+
+    def setUp(self):
+        self.author = create_user("author")
+        self.solver = create_user("solver")
+        self.outsider = create_user("outsider")
+        self.puzzle = Puzzle(
+            name="Sandboxed",
+            codename="sandboxed",
+            status=status.TESTSOLVING,
+            status_mtime=datetime.fromtimestamp(0),
+            content_html=self.HTML,
+        )
+        self.puzzle.save()
+        self.puzzle.authors.add(self.author)
+        self.puzzle.spoiled.add(self.author)
+        self.session = TestsolveSession(puzzle=self.puzzle)
+        self.session.save()
+        TestsolveParticipation(session=self.session, user=self.solver).save()
+
+    def client_for(self, name):
+        c = Client()
+        self.assertTrue(c.login(username=name, password=name + "secret"))
+        return c
+
+    def assert_sandboxed(self, response):
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn('sandbox="allow-scripts allow-popups allow-modals"', body)
+        self.assertNotIn("allow-same-origin", body)
+        self.assertNotIn("allow-top-navigation", body)
+        # The puzzle only ever appears escaped inside srcdoc, never as live markup.
+        self.assertNotIn("<script>alert", body)
+        self.assertIn("&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;", body)
+        self.assertEqual(response["X-Frame-Options"], "DENY")
+
+    def test_participant_sees_sandboxed_html(self):
+        url = urls.reverse("testsolve_html", args=[self.session.id])
+        self.assert_sandboxed(self.client_for("solver").get(url))
+
+    def test_spoiled_author_sees_session_and_preview(self):
+        c = self.client_for("author")
+        self.assert_sandboxed(
+            c.get(urls.reverse("testsolve_html", args=[self.session.id]))
+        )
+        self.assert_sandboxed(c.get(urls.reverse("puzzle_html", args=[self.puzzle.id])))
+
+    def test_outsider_is_refused(self):
+        c = self.client_for("outsider")
+        self.assertEqual(
+            c.get(urls.reverse("testsolve_html", args=[self.session.id])).status_code,
+            403,
+        )
+        self.assertEqual(
+            c.get(urls.reverse("puzzle_html", args=[self.puzzle.id])).status_code, 403
+        )
+
+    def test_unspoiled_participant_cannot_use_preview(self):
+        url = urls.reverse("puzzle_html", args=[self.puzzle.id])
+        self.assertEqual(self.client_for("solver").get(url).status_code, 403)
+
+    def test_logged_out_redirects_to_login(self):
+        url = urls.reverse("testsolve_html", args=[self.session.id])
+        self.assertEqual(Client().get(url).status_code, 302)
+
+    def test_no_html_is_404(self):
+        self.puzzle.content_html = ""
+        self.puzzle.save()
+        url = urls.reverse("puzzle_html", args=[self.puzzle.id])
+        self.assertEqual(self.client_for("author").get(url).status_code, 404)
+
+    def test_testsolve_page_links_viewer(self):
+        url = urls.reverse("testsolve_one", args=[self.session.id])
+        body = self.client_for("solver").get(url).content.decode()
+        self.assertIn(urls.reverse("testsolve_html", args=[self.session.id]), body)
+        self.assertNotIn("<script>alert", body)
+
+    def test_edit_content_saves_html(self):
+        url = urls.reverse(
+            "puzzle_w_slug", kwargs={"id": self.puzzle.id, "slug": self.puzzle.slug}
+        )
+        self.client_for("author").post(
+            url,
+            {
+                "edit_content": "Submit",
+                "content": "see link",
+                "content_html": "<p>new</p>",
+            },
+        )
+        self.puzzle.refresh_from_db()
+        self.assertEqual(self.puzzle.content_html, "<p>new</p>")
+        self.assertEqual(self.puzzle.content, "see link")

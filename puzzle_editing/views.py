@@ -22,6 +22,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import Permission
 from django.core import validators
+from django.core.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
 from django.db.models import Avg
 from django.db.models import BooleanField
@@ -36,6 +37,7 @@ from django.db.models import Subquery
 from django.db.models.functions import Lower
 from django.forms.fields import MultipleChoiceField
 from django.forms.models import ModelChoiceIterator
+from django.http import Http404
 from django.http import HttpRequest
 from django.http import HttpResponse
 from django.http import HttpResponseBadRequest
@@ -876,9 +878,12 @@ class LogisticsInfoForm(forms.ModelForm):
 class PuzzleContentForm(forms.ModelForm):
     class Meta:
         model = Puzzle
-        fields = ["content"]
+        fields = ["content", "content_html"]
         widgets = {
             "content": forms.Textarea(attrs={"class": "textarea"}),
+            "content_html": forms.Textarea(
+                attrs={"class": "textarea is-family-monospace", "rows": 6}
+            ),
         }
 
 
@@ -3131,6 +3136,69 @@ class TestsolveParticipationForm(forms.ModelForm):
                 ]
             ),
         }
+
+
+# Sandbox for Puzzle.content_html. Deliberately no allow-same-origin: the page
+# gets an opaque origin, so its scripts can't read PuzzUp cookies, call PuzzUp
+# with the viewer's session, or touch the parent page. No allow-top-navigation
+# or allow-forms either: puzzles answer through PuzzUp's own guess box.
+PUZZLE_HTML_SANDBOX = "allow-scripts allow-popups allow-modals"
+
+
+def render_puzzle_html(request, puzzle, back_url, back_label):
+    if not puzzle.content_html.strip():
+        raise Http404("This puzzle has no interactive HTML.")
+    response = render(
+        request,
+        "puzzle_html_viewer.html",
+        {
+            "puzzle": puzzle,
+            "back_url": back_url,
+            "back_label": back_label,
+            "sandbox": PUZZLE_HTML_SANDBOX,
+        },
+    )
+    # The viewer page itself runs no puzzle code; keep it from being framed.
+    response["X-Frame-Options"] = "DENY"
+    response["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@login_required
+def testsolve_html(request, id):
+    """Interactive HTML for a testsolve session: participants and spoiled users."""
+    session = get_object_or_404(
+        TestsolveSession.objects.select_related("puzzle").prefetch_related(
+            "puzzle__spoiled"
+        ),
+        id=id,
+    )
+    user = request.user
+    is_participant = TestsolveParticipation.objects.filter(
+        session=session, user=user
+    ).exists()
+    if not (is_participant or is_spoiled_on(user, session.puzzle)):
+        raise PermissionDenied
+    return render_puzzle_html(
+        request,
+        session.puzzle,
+        urls.reverse("testsolve_one", args=[session.id]),
+        f"Back to testsolve session #{session.id}",
+    )
+
+
+@login_required
+def puzzle_html(request, id):
+    """Interactive HTML preview for people spoiled on the puzzle."""
+    puzzle = get_object_or_404(Puzzle.objects.prefetch_related("spoiled"), id=id)
+    if not is_spoiled_on(request.user, puzzle):
+        raise PermissionDenied
+    return render_puzzle_html(
+        request,
+        puzzle,
+        urls.reverse("puzzle", args=[puzzle.id]),
+        "Back to puzzle",
+    )
 
 
 @login_required

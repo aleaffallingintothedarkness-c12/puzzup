@@ -435,10 +435,16 @@
 				Puzzle (<a href="http://www.markdownguide.org/">markdown</a> supported):
 				{% csrf_token %}
 				{{ content_form.content }}
-				<input type="submit" class="button is-info" name="edit_content" value="Submit">
+				<p class="mt-3">
+					{{ content_form.content_html.label }} (optional):
+					<span class="help">{{ content_form.content_html.help_text }}</span>
+				</p>
+				{{ content_form.content_html }}
+				<input type="submit" class="button is-info mt-2" name="edit_content" value="Submit">
 			</form>
 			</div>
 			{% if puzzle.has_postprod %}<b>See <a href="{{ puzzle.postprod_url }}">the postprodded puzzle</a>.</b><br/>{% endif %}
+			{% if puzzle.content_html %}<p><b>🧩 <a href="{% url 'puzzle_html' puzzle.id %}" target="_blank" rel="noopener">Open the interactive puzzle</a></b> (what testsolvers see)</p>{% endif %}
 			{% if puzzle.content %}
 			{{ puzzle.content|markdown }}
 			{% else %}

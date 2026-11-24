@@ -56,6 +56,7 @@
 		<div class="box">
 			<h2>Puzzle</h2>
 			{% if session.puzzle.has_postprod %}<b>👉 <a href="{{ session.puzzle.postprod_url }}">the postprodded puzzle</a> on staging.</b>{% endif %}
+			{% if session.puzzle.content_html %}<p class="block"><b>🧩 <a href="{% url 'testsolve_html' session.id %}" target="_blank" rel="noopener">Open the interactive puzzle</a></b> (opens in a new tab; submit guesses here)</p>{% endif %}
 			{% if session.puzzle.content %}
 			{{ session.puzzle.content|markdown }}
 			{% else %}
